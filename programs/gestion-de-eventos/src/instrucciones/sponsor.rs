@@ -72,12 +72,10 @@ pub struct Sponsor<'info> {
 pub enum ErrorCode {
     #[msg("La venta de tokens está cerrada.")]
     VentasCerradas,
+    #[msg("El periodo de ventas acaba de finalizar y las ventas se encuentran cerradas")]
+    SeCierranLasVentas,
 }
-
-pub fn handle(
-    ctx: Context<Sponsor>,
-    quantity: u64,
-  ) -> Result<()> {
+pub fn handle( ctx: Context<Sponsor>, quantity: u64) -> Result<()> {
 
     let evento = &mut ctx.accounts.evento;
     if !(evento.open_sales) {
@@ -85,7 +83,7 @@ pub fn handle(
     };
     if ctx.accounts.clock.unix_timestamp > evento.timestamp_event_close {
         evento.open_sales = false;
-        return Err(ErrorCode::VentasCerradas.into()) // deolver un Err con mensaje de ventas cerradas
+        return Err(ErrorCode::SeCierranLasVentas.into()) // deolver un Err con mensaje de ventas cerradas
     }
     
     let seeds = [

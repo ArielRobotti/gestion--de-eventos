@@ -86,10 +86,10 @@ describe("gestion-de-eventos", () => {
     console.log("Informacion del evento: ", eventAccount.name);
   });
 
-  // Test Sponsor 
-  it("Alice compra 20 tokens del evento pagando 20 unidades de la moneda de cambio"), async () => {
+  // Test Sponsor con timestamp transcurrido error SeCierranLasVentas
+  it("Alice compra 20 tokens del evento pagando 20 unidades de la moneda de cambio", async () => {
 
-    const aliceAccountAntes = await getAccount(provider.connection, aliceEventTokenAccount);
+    const aliceAccountAntes = await getAccount(provider.connection, aliceMonedaDeCambioAccount);
 
     const qty = new BN(20);
     await program.methods
@@ -106,11 +106,38 @@ describe("gestion-de-eventos", () => {
       .rpc();
     
       // Mostrar estado del Asociated Token Account de Alice
-      const aliceAccountDespues = await getAccount( provider.connection, aliceEventTokenAccount );
+      const aliceAccountDespues = await getAccount( provider.connection, aliceMonedaDeCambioAccount );
       console.log("Estado de la cuenta de Alice antes de comprar tokens: ");
       console.log(aliceAccountAntes)
       console.log("------------------------------------------------------")
       console.log(aliceAccountDespues)
-      
-  }
+
+  });
+  // Test Sponsor con timestamp transcurrido error VentasCerradas
+  it("Alice compra 10 tokens del evento pagando 10 unidades de la moneda de cambio", async () => {
+
+    const aliceAccountAntes = await getAccount(provider.connection, aliceMonedaDeCambioAccount);
+
+    const qty = new BN(10);
+    await program.methods
+      .sponsorEvent(qty)
+      .accounts({
+        eventMint: eventMint,
+        payerAcceptedMintAta: aliceMonedaDeCambioAccount,
+        evento: eventPublicKey,
+        authority: alice.publicKey,
+        payerEventMintAta: aliceEventTokenAccount,
+        treasuryVault: treasuryVault
+      })
+      .signers([alice])
+      .rpc();
+    
+      // Mostrar estado del Asociated Token Account de Alice
+      const aliceAccountDespues = await getAccount( provider.connection, aliceMonedaDeCambioAccount );
+      console.log("Estado de la cuenta de Alice antes de comprar tokens: ");
+      console.log(aliceAccountAntes)
+      console.log("------------------------------------------------------")
+      console.log(aliceAccountDespues)
+
+  });
 });
