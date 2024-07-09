@@ -3,12 +3,12 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(InitSpace)]
 pub struct Evento {
-    #[max_len(40)]
+    #[max_len(20)]
     pub name: String,
     pub ticket_price: u64,
     pub open_sales: bool,
     //cerrar las ventas (open_sales = false) cuando timestamp_event sea alcanzado por el Clock
-    pub timestamp_event: u64,
+    pub timestamp_event_close: i64,
 
     pub authority: Pubkey,
     pub accepted_mint: Pubkey,

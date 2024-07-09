@@ -2,9 +2,10 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { GestionDeEventos } from "../target/types/gestion_de_eventos";
 import { Keypair, PublicKey } from '@solana/web3.js';
-import { createMint } from './utils';
+import { createMint, createFundedWallet, createAssociatedTokenAccount } from './utils';
 
 import { BN } from "bn.js";
+import { getAssociatedTokenAddress, getAccount } from "@solana/spl-token";
 
 describe("gestion-de-eventos", () => {
   // Configure the client to use the local cluster.
@@ -26,6 +27,11 @@ describe("gestion-de-eventos", () => {
   let treasuryVault: PublicKey;
   let gainVault: PublicKey;
 
+  //Crear usuario Sponsor
+  let alice: Keypair;
+  let aliceMonedaDeCambioAccount: PublicKey;
+  let aliceEventTokenAccount: PublicKey;
+
   before(async () => {
     acceptedMint = await createMint(provider);
 
@@ -46,7 +52,18 @@ describe("gestion-de-eventos", () => {
       program.programId
     );
 
+    alice = await createFundedWallet(provider, 30); //Función de Daiana
+    aliceMonedaDeCambioAccount = await createAssociatedTokenAccount(provider, acceptedMint , 30, alice); // Función de Daiana
+    aliceEventTokenAccount = await getAssociatedTokenAddress(eventMint, alice.publicKey);
+
+
+
   });
+
+  
+
+
+
 
   it("Is initialized!", async () => {
     // Add your test here.
@@ -68,4 +85,32 @@ describe("gestion-de-eventos", () => {
     const eventAccount = await program.account.evento.fetch(eventPublicKey)
     console.log("Informacion del evento: ", eventAccount.name);
   });
+
+  // Test Sponsor 
+  it("Alice compra 20 tokens del evento pagando 20 unidades de la moneda de cambio"), async () => {
+
+    const aliceAccountAntes = await getAccount(provider.connection, aliceEventTokenAccount);
+
+    const qty = new BN(20);
+    await program.methods
+      .sponsorEvent(qty)
+      .accounts({
+        eventMint: eventMint,
+        payerAcceptedMintAta: aliceMonedaDeCambioAccount,
+        evento: eventPublicKey,
+        authority: alice.publicKey,
+        payerEventMintAta: aliceEventTokenAccount,
+        treasuryVault: treasuryVault
+      })
+      .signers([alice])
+      .rpc();
+    
+      // Mostrar estado del Asociated Token Account de Alice
+      const aliceAccountDespues = await getAccount( provider.connection, aliceEventTokenAccount );
+      console.log("Estado de la cuenta de Alice antes de comprar tokens: ");
+      console.log(aliceAccountAntes)
+      console.log("------------------------------------------------------")
+      console.log(aliceAccountDespues)
+      
+  }
 });
