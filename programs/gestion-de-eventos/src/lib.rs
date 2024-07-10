@@ -32,5 +32,8 @@ pub mod gestion_de_eventos {
     pub fn comprar_tickets ( ctx: Context<ComprarTickets>, quantity: u64 ) -> Result<()> {
         instrucciones::comprar_tickets::handle(ctx, quantity)
     }
-    
+    // Withdraw
+    pub fn withdraw ( ctx: Context<WithdrawFunds>, quantity: u64 ) -> Result<()> {
+        instrucciones::withdraw_funds::handle(ctx, quantity)
+    }
 }
