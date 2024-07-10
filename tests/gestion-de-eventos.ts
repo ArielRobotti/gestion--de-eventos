@@ -53,24 +53,18 @@ describe("gestion-de-eventos", () => {
     );
 
     alice = await createFundedWallet(provider, 30); //Función de Daiana
-    aliceMonedaDeCambioAccount = await createAssociatedTokenAccount(provider, acceptedMint , 30, alice); // Función de Daiana
+    aliceMonedaDeCambioAccount = await createAssociatedTokenAccount(provider, acceptedMint , 100, alice); // Función de Daiana
     aliceEventTokenAccount = await getAssociatedTokenAddress(eventMint, alice.publicKey);
 
-
-
   });
-
-  
-
-
-
 
   it("Is initialized!", async () => {
     // Add your test here.
     const nombre = "Solana Bootcamp";
-    const precio = new BN(1);
-    const fecha_cierre_de_ventas = new BN(1720467900); //Mon Jul 08 2024 19:45:00 GMT+0000
-    const tx = await program.methods.crearEvento(nombre, precio, fecha_cierre_de_ventas)
+    const precio = new BN(2);
+    const open_sales = true;
+    const fecha_cierre_de_ventas = new BN(1820467900); //Mon Jul 08 2024 19:45:00 GMT+0000
+    const tx = await program.methods.crearEvento(nombre, precio, open_sales, fecha_cierre_de_ventas)
     .accounts({
       evento: eventPublicKey,
       acceptedMint: acceptedMint,
@@ -114,11 +108,11 @@ describe("gestion-de-eventos", () => {
 
   });
   // Test Sponsor con timestamp transcurrido error VentasCerradas
-  it("Alice compra 10 tokens del evento pagando 10 unidades de la moneda de cambio", async () => {
+  it("Alice compra 11 tokens del evento pagando 11 unidades de la moneda de cambio", async () => {
 
     const aliceAccountAntes = await getAccount(provider.connection, aliceMonedaDeCambioAccount);
 
-    const qty = new BN(10);
+    const qty = new BN(11);
     await program.methods
       .sponsorEvent(qty)
       .accounts({
@@ -140,4 +134,26 @@ describe("gestion-de-eventos", () => {
       console.log(aliceAccountDespues)
 
   });
+
+  // Test Comprar Tickets
+  it("Alice quiere comprar 10 Tickes", async () => {
+    const aliceAccount2 = await getAccount( provider.connection, aliceMonedaDeCambioAccount );
+    console.log("Estado de la cuenta de Alice despues de comprar 10 Tickets: ");
+    console.log(aliceAccount2)
+
+    const qty = new BN(10);
+    await program.methods.comprarTickets(qty)
+      .accounts({
+        payerAcceptedMintAta: aliceMonedaDeCambioAccount,
+        evento: eventPublicKey,
+        authority: alice.publicKey,
+        gainVault: gainVault
+      })
+      .signers([alice])
+      .rpc();
+
+      const aliceAccount3 = await getAccount( provider.connection, aliceMonedaDeCambioAccount );
+      console.log("Estado de la cuenta de Alice despues de comprar 10 Tickets: ");
+      console.log(aliceAccount3)
+  } )
 });

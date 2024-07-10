@@ -68,11 +68,11 @@ pub struct CrearEvento<'info> {
 
 }
 
-pub fn handle(ctx: Context<CrearEvento>, nombre: String, precio: u64, close_sales: i64) -> Result<()> {
+pub fn handle(ctx: Context<CrearEvento>, nombre: String, precio: u64, open_sales: bool, close_sales_date: i64) -> Result<()> {
     ctx.accounts.evento.name = nombre;
     ctx.accounts.evento.ticket_price = precio;
-    ctx.accounts.evento.open_sales = true;
-    ctx.accounts.evento.timestamp_event_close = close_sales;
+    ctx.accounts.evento.open_sales = open_sales;
+    ctx.accounts.evento.timestamp_event_close = close_sales_date;
 
     ctx.accounts.evento.authority = ctx.accounts.authority.key();
     ctx.accounts.evento.accepted_mint = ctx.accounts.accepted_mint.key();

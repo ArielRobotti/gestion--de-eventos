@@ -1,5 +1,6 @@
 use {
     crate::collections::Evento,
+    crate::utils::errors::ErrorCode,
     anchor_lang::prelude::*,
     anchor_spl::{
         token::*,
@@ -16,7 +17,7 @@ pub struct Sponsor<'info> {
             evento.authority.key().as_ref()
         ],
         bump = evento.event_bump,
-
+        constraint = evento.open_sales == true @ ErrorCode::VentasCerradas,
     )]
     pub evento: Box<Account<'info, Evento>>,
 
@@ -67,23 +68,14 @@ pub struct Sponsor<'info> {
     pub system_program: Program<'info, System>,
     
 }
-#[error_code]
 
-pub enum ErrorCode {
-    #[msg("La venta de tokens está cerrada.")]
-    VentasCerradas,
-    #[msg("El periodo de ventas acaba de finalizar y las ventas se encuentran cerradas")]
-    SeCierranLasVentas,
-}
 pub fn handle( ctx: Context<Sponsor>, quantity: u64) -> Result<()> {
 
     let evento = &mut ctx.accounts.evento;
-    if !(evento.open_sales) {
-        return Err(ErrorCode::VentasCerradas.into()) // deolver un Err con mensaje de ventas cerradas
-    };
+    
     if ctx.accounts.clock.unix_timestamp > evento.timestamp_event_close {
-        evento.open_sales = false;
-        return Err(ErrorCode::SeCierranLasVentas.into()) // deolver un Err con mensaje de ventas cerradas
+        evento.open_sales = false; // No se cambia :(
+        return Err(ErrorCode::SeCierranLasVentas.into())
     }
     
     let seeds = [
