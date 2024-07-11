@@ -36,4 +36,11 @@ pub mod gestion_de_eventos {
     pub fn withdraw ( ctx: Context<WithdrawFunds>, quantity: u64 ) -> Result<()> {
         instrucciones::withdraw_funds::handle(ctx, quantity)
     }
+
+    // Cerrar evento
+    pub fn cerrar_evento (ctx: Context<CerrarEvento>) -> Result<()> {
+        instrucciones::cerrar_evento::handle(ctx)
+    }
+
+
 }

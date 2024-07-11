@@ -23,15 +23,16 @@ pub struct WithdrawFunds<'info> {
 
     pub accepted_mint: Box<Account<'info, Mint>>, // accepted mint
 
+    // Accepted_mint_ata de la autoridad que creo el evento
     #[account(
         init_if_needed, // create account if doesn't exist
         payer = authority, 
         associated_token::mint = accepted_mint, // event mint
         associated_token::authority = authority, // token account authority
     )]
-    // ATA of the authorithy withdrawing funds
     pub authotiry_accepted_mint_ata: Box<Account<'info, TokenAccount>>,
-
+    
+    //treasury account
     #[account(
         mut,
         seeds = [

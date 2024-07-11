@@ -9,6 +9,7 @@ pub struct Evento {
     pub open_sales: bool,
     //cerrar las ventas (open_sales = false) cuando timestamp_event sea alcanzado por el Clock
     pub timestamp_event_close: i64,
+    pub sponsor_ammount: u64,
 
     pub authority: Pubkey,
     pub accepted_mint: Pubkey,

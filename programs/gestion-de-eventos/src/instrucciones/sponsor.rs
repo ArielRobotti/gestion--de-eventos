@@ -68,13 +68,17 @@ pub struct Sponsor<'info> {
     pub system_program: Program<'info, System>,
     
 }
+#[event]
+pub struct EventSalesClosed {
+    pub event: Pubkey,
+    pub timestamp: i64,
+}
 
 pub fn handle( ctx: Context<Sponsor>, quantity: u64) -> Result<()> {
 
     let evento = &mut ctx.accounts.evento;
-    
-    if ctx.accounts.clock.unix_timestamp > evento.timestamp_event_close {
-        evento.open_sales = false; // No se cambia :(
+    if ctx.accounts.clock.unix_timestamp > evento.timestamp_event_close {   
+        evento.open_sales = false; 
         return Err(ErrorCode::SeCierranLasVentas.into())
     }
     
@@ -109,5 +113,7 @@ pub fn handle( ctx: Context<Sponsor>, quantity: u64) -> Result<()> {
         ),
         quantity,
     )?;
+
+    ctx.accounts.evento.sponsor_ammount += quantity;
     Ok(())
   }

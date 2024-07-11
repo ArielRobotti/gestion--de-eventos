@@ -10,5 +10,8 @@ pub use comprar_tickets::*;
 pub mod withdraw_funds;
 pub use withdraw_funds::*;
 
+pub mod cerrar_evento;
+pub use cerrar_evento::*;
+
 
 

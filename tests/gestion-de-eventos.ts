@@ -6,6 +6,7 @@ import { createMint, createFundedWallet, createAssociatedTokenAccount } from './
 
 import { BN } from "bn.js";
 import { getAssociatedTokenAddress, getAccount } from "@solana/spl-token";
+import { assert } from "chai";
 
 describe("gestion-de-eventos", () => {
   // Configure the client to use the local cluster.
@@ -58,7 +59,7 @@ describe("gestion-de-eventos", () => {
     );
 
     alice = await createFundedWallet(provider, 30); //Función de Daiana
-    aliceMonedaDeCambioAccount = await createAssociatedTokenAccount(provider, acceptedMint , 100, alice); // Función de Daiana
+    aliceMonedaDeCambioAccount = await createAssociatedTokenAccount(provider, acceptedMint, 100, alice); // Función de Daiana
     aliceEventTokenAccount = await getAssociatedTokenAddress(eventMint, alice.publicKey);
 
   });
@@ -70,15 +71,15 @@ describe("gestion-de-eventos", () => {
     const open_sales = true;
     const fecha_cierre_de_ventas = new BN(1820467900); //Mon Jul 08 2024 19:45:00 GMT+0000
     const tx = await program.methods.crearEvento(nombre, precio, open_sales, fecha_cierre_de_ventas)
-    .accounts({
-      evento: eventPublicKey,
-      acceptedMint: acceptedMint,
-      eventMint: eventMint,
-      treasuryVault: treasuryVault,
-      gainVault: gainVault,
-      authority: provider.wallet.publicKey,
-    })
-    .rpc();
+      .accounts({
+        evento: eventPublicKey,
+        acceptedMint: acceptedMint,
+        eventMint: eventMint,
+        treasuryVault: treasuryVault,
+        gainVault: gainVault,
+        authority: provider.wallet.publicKey,
+      })
+      .rpc();
 
     // Informacion del evento
     const eventAccount = await program.account.evento.fetch(eventPublicKey)
@@ -103,13 +104,13 @@ describe("gestion-de-eventos", () => {
       })
       .signers([alice])
       .rpc();
-    
-      // Mostrar estado del Asociated Token Account de Alice
-      const aliceAccountDespues = await getAccount( provider.connection, aliceMonedaDeCambioAccount );
-      console.log("Estado de la cuenta de Alice antes de comprar tokens: ");
-      console.log(aliceAccountAntes)
-      console.log("------------------------------------------------------")
-      console.log(aliceAccountDespues)
+
+    // Mostrar estado del Asociated Token Account de Alice
+    const aliceAccountDespues = await getAccount(provider.connection, aliceMonedaDeCambioAccount);
+    console.log("Estado de la cuenta de Alice antes de comprar tokens: ");
+    console.log(aliceAccountAntes)
+    console.log("------------------------------------------------------")
+    console.log(aliceAccountDespues)
 
   });
   // Test Sponsor con timestamp transcurrido error VentasCerradas
@@ -130,19 +131,19 @@ describe("gestion-de-eventos", () => {
       })
       .signers([alice])
       .rpc();
-    
-      // Mostrar estado del Asociated Token Account de Alice
-      const aliceAccountDespues = await getAccount( provider.connection, aliceMonedaDeCambioAccount );
-      console.log("Estado de la cuenta de Alice antes de comprar tokens: ");
-      console.log(aliceAccountAntes)
-      console.log("------------------------------------------------------")
-      console.log(aliceAccountDespues)
+
+    // Mostrar estado del Asociated Token Account de Alice
+    const aliceAccountDespues = await getAccount(provider.connection, aliceMonedaDeCambioAccount);
+    console.log("Estado de la cuenta de Alice antes de comprar tokens: ");
+    console.log(aliceAccountAntes)
+    console.log("------------------------------------------------------")
+    console.log(aliceAccountDespues)
 
   });
 
   // Test Comprar Tickets
   it("Alice quiere comprar 10 Tickes", async () => {
-    const aliceAccount2 = await getAccount( provider.connection, aliceMonedaDeCambioAccount );
+    const aliceAccount2 = await getAccount(provider.connection, aliceMonedaDeCambioAccount);
     console.log("Estado de la cuenta de Alice despues de comprar 10 Tickets: ");
     console.log(aliceAccount2)
 
@@ -157,14 +158,14 @@ describe("gestion-de-eventos", () => {
       .signers([alice])
       .rpc();
 
-      const aliceAccount3 = await getAccount( provider.connection, aliceMonedaDeCambioAccount );
-      console.log("Estado de la cuenta de Alice despues de comprar 10 Tickets: ");
-      console.log(aliceAccount3)
+    const aliceAccount3 = await getAccount(provider.connection, aliceMonedaDeCambioAccount);
+    console.log("Estado de la cuenta de Alice despues de comprar 10 Tickets: ");
+    console.log(aliceAccount3)
   });
 
   // Test Withdraw
   it("Event organizer should withdraw funds", async () => {
-   
+
     const amount = new BN(1); // 1 USDC
     await program.methods
       .withdraw(amount)
@@ -176,7 +177,7 @@ describe("gestion-de-eventos", () => {
         authotiryAcceptedMintAta: walletAcceptedMintATA, // account where the event organizer receives accepted mint(USDC)
       })
       .rpc();
-    
+
     // show event treasury vault info
     // should have 4 (5-1) USDC
     const treasuryVaultAccount = await getAccount(
@@ -193,5 +194,40 @@ describe("gestion-de-eventos", () => {
     );
     console.log("Alice Accepted mint ATA: ", organizerUSDCBalance);
 
+  });
+
+  // Test cerrar evento
+  it("Cerrar evento", async () => {
+    program.methods.cerrarEvento()
+      .accounts({
+        evento: eventPublicKey,
+        authority: provider.wallet.publicKey,
+      })
+      .rpc();
+
+    console.log("open_sales esta en -> ", program.account.evento)
+
+  })
+  // Comprar despues de cerrado el evento
+
+  it("Alice no puede comprar mas tickets", async () => {
+
+    let error = "";
+    const qty = new BN(10);
+    try {
+      await program.methods.comprarTickets(qty)
+        .accounts({
+          payerAcceptedMintAta: aliceMonedaDeCambioAccount,
+          evento: eventPublicKey,
+          authority: alice.publicKey,
+          gainVault: gainVault
+        })
+        .signers([alice])
+        .rpc();
+    } catch (err) {
+      error = err.msg;
+    }
+    assert.equal(error, "La venta de tickets esta cerrada");
+    console.log("You can't buy tickets, the Event is already closed");
   });
 });
