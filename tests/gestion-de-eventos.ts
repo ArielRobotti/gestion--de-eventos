@@ -97,7 +97,7 @@ describe("gestion-de-eventos", () => {
   });
 
   // Test Sponsor con timestamp transcurrido error SeCierranLasVentas
-  it("Alice compra 20 tokens del evento pagando 20 unidades de la moneda de cambio", async () => {
+  it("Alice compra 20 tokens del evento pagando 20 de sus 40 unidades de la moneda de cambio", async () => {
     const aliceAccountAntes = await getAccount(provider.connection, aliceMonedaDeCambioAccount);
 
     const qty = new BN(20);
@@ -118,7 +118,7 @@ describe("gestion-de-eventos", () => {
 
   // Test Comprar Tickets en preventa
   it("Alice decide comprar solo 3 porque su amiga Rogelia no confirmó asistencia", async () => {
-    console.log("A Alice ahora le alcanza para comprar 4 tickets en preventa, pero...");
+    console.log("A Alice ahora le alcanza para comprar 4 tickets en preventa ya que cuestan un 50% menos, pero...");
     const qty = new BN(3);
     await program.methods.comprarTickets(qty)
       .accounts({
@@ -140,13 +140,12 @@ describe("gestion-de-eventos", () => {
     console.log("Saldo de Alice: Luego de comprar 20 tokens y 3 tickets en preventa: ------- ", aliceBalance.amount.toString());
     console.log("La fecha de cierre de preventa se acerca");
     await sleep(cierre_preventas_segs);
-    console.log("La preventa acaba de finalizar");
     console.log("Rogelia pudo solucionar su inconveniente y confirma que asistirá al evento")
   });
 
   // Test compra de ticket sin suficientes tockens
 
-  it("Alice intenta comprar un Ticket más pero ya no le alcanza", async () => {
+  it("...ya no le alcanza. El descuento del 50% ya no está vigente y los tickets valen 10", async () => {
     const qty = new BN(1);
     let errMsg = "";
     try {
@@ -167,6 +166,7 @@ describe("gestion-de-eventos", () => {
       }
     }
     console.log("Alice no puede comprar tokens porque... ", errMsg )
+    // está raro, ahora no me retorna el eror custom cuando se intenta comprar luego del cierre
     let verificarError = errMsg == "La venta de tickets esta cerrada" || errMsg.includes("Transaction simulation failed: Error processing Instruction 0:")
     assert(verificarError);
   });
@@ -237,7 +237,6 @@ describe("gestion-de-eventos", () => {
         errMsg = err.msg
       }
     }
-    console.log("Alice no puede comprar tokens porque... ", errMsg )
     let verificarError = errMsg == "La venta de tickets esta cerrada" || errMsg.includes("Transaction simulation failed: Error processing Instruction 0:")
     assert(verificarError);
 
