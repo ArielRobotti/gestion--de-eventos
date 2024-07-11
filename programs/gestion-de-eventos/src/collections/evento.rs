@@ -7,9 +7,12 @@ pub struct Evento {
     pub name: String,
     pub ticket_price: u64,
     pub open_sales: bool,
+    // fecha de cierre de preventa con descuento
+    pub timestamp_presales_close: i64,
     //cerrar las ventas (open_sales = false) cuando timestamp_event sea alcanzado por el Clock
+
     pub timestamp_event_close: i64,
-    pub sponsor_ammount: u64,
+    pub sponsor_amount: u64,
 
     pub authority: Pubkey,
     pub accepted_mint: Pubkey,

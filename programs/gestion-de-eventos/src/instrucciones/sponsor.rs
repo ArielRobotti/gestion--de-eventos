@@ -81,7 +81,7 @@ pub fn handle( ctx: Context<Sponsor>, quantity: u64) -> Result<()> {
         evento.open_sales = false; 
         return Err(ErrorCode::SeCierranLasVentas.into())
     }
-    
+
     let seeds = [
         Evento::SEED_EVENT.as_bytes(),
         ctx.accounts.evento.authority.as_ref(),
@@ -114,6 +114,6 @@ pub fn handle( ctx: Context<Sponsor>, quantity: u64) -> Result<()> {
         quantity,
     )?;
 
-    ctx.accounts.evento.sponsor_ammount += quantity;
+    ctx.accounts.evento.sponsor_amount += quantity;
     Ok(())
   }

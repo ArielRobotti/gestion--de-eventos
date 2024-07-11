@@ -19,9 +19,10 @@ pub mod gestion_de_eventos {
         nombre: String,
         precio: u64,
         open_sales: bool,
+        close_presales_date: i64,
         close_sales_date: i64
     ) -> Result<()> {
-        instrucciones::crear_evento::handle(ctx, nombre, precio, open_sales, close_sales_date)
+        instrucciones::crear_evento::handle(ctx, nombre, precio, open_sales, close_presales_date, close_sales_date)
     }
     // Sponsor event
     pub fn sponsor_event ( ctx: Context<Sponsor>, quantity: u64 ) -> Result<()> {
@@ -42,5 +43,11 @@ pub mod gestion_de_eventos {
         instrucciones::cerrar_evento::handle(ctx)
     }
 
+    // Withdraw earnings
+    pub fn withdraw_earnings (ctx: Context<WithdrawEarnings>) -> Result<()> {
+        instrucciones::withdraw_earnings::handle(ctx)
+    }
+
+    
 
 }

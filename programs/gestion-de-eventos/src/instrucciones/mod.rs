@@ -13,5 +13,8 @@ pub use withdraw_funds::*;
 pub mod cerrar_evento;
 pub use cerrar_evento::*;
 
+pub mod withdraw_earnings;
+pub use withdraw_earnings::*;
+
 
 

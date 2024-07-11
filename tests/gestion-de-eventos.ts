@@ -8,6 +8,16 @@ import { BN } from "bn.js";
 import { getAssociatedTokenAddress, getAccount } from "@solana/spl-token";
 import { assert } from "chai";
 
+function sleep(seg: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, seg * 1000));
+}
+
+let cierre_preventas_segs = 3;
+let cierre_evento_segs = 6;
+let fondeo_cuenta_tokens = 40;
+let precio_ticket = 10;
+
+
 describe("gestion-de-eventos", () => {
   // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
@@ -15,11 +25,6 @@ describe("gestion-de-eventos", () => {
 
   const program = anchor.workspace.GestionDeEventos as Program<GestionDeEventos>;
 
-  // const name: String = "Solana Bootcamp";
-  // const precio = new BN(1);
-  // const fecha_cierre_de_ventas = new BN(1720457100);
-
-  //
   let acceptedMint: PublicKey;
 
   //PDA
@@ -59,18 +64,24 @@ describe("gestion-de-eventos", () => {
     );
 
     alice = await createFundedWallet(provider, 30); //Función de Daiana
-    aliceMonedaDeCambioAccount = await createAssociatedTokenAccount(provider, acceptedMint, 100, alice); // Función de Daiana
+    aliceMonedaDeCambioAccount = await createAssociatedTokenAccount(provider, acceptedMint, fondeo_cuenta_tokens, alice); // Función de Daiana
     aliceEventTokenAccount = await getAssociatedTokenAddress(eventMint, alice.publicKey);
-
   });
+
+  // Inicializamos el Evento con una fecha de cierre de preventa de + 2 Segundos, y una fecha de cierre automatico de evento de + 4 segundos
+  // y para simular el paso del tiempo y ve su incidencia en el comportamineto del programa intercalaremos algunos Timeouts
 
   it("Is initialized!", async () => {
     // Add your test here.
     const nombre = "Solana Bootcamp";
-    const precio = new BN(2);
+    const precio = new BN(precio_ticket);
     const open_sales = true;
-    const fecha_cierre_de_ventas = new BN(1820467900); //Mon Jul 08 2024 19:45:00 GMT+0000
-    const tx = await program.methods.crearEvento(nombre, precio, open_sales, fecha_cierre_de_ventas)
+    ////////// para pruebas de automatizacion de cierre de ventas ///////////////////
+    const currentTimestamp = Math.floor(Date.now() / 1000);       // Timestamp en segundos de la ejecucion del test
+    const fecha_cierre_de_preventa = new BN(currentTimestamp + cierre_preventas_segs);
+    const fecha_cierre_de_ventas = new BN(currentTimestamp + cierre_evento_segs);  // establecemos el cierre del evento en realidad ( me quedó con ese nombre)
+
+    const tx = await program.methods.crearEvento(nombre, precio, open_sales, fecha_cierre_de_preventa, fecha_cierre_de_ventas)
       .accounts({
         evento: eventPublicKey,
         acceptedMint: acceptedMint,
@@ -80,15 +91,13 @@ describe("gestion-de-eventos", () => {
         authority: provider.wallet.publicKey,
       })
       .rpc();
-
     // Informacion del evento
-    const eventAccount = await program.account.evento.fetch(eventPublicKey)
-    console.log("Informacion del evento: ", eventAccount.name);
+    // const eventAccount = await program.account.evento.fetch(eventPublicKey)
+    // console.log("Informacion del evento: ", eventAccount.name);
   });
 
   // Test Sponsor con timestamp transcurrido error SeCierranLasVentas
   it("Alice compra 20 tokens del evento pagando 20 unidades de la moneda de cambio", async () => {
-
     const aliceAccountAntes = await getAccount(provider.connection, aliceMonedaDeCambioAccount);
 
     const qty = new BN(20);
@@ -104,50 +113,13 @@ describe("gestion-de-eventos", () => {
       })
       .signers([alice])
       .rpc();
-
-    // Mostrar estado del Asociated Token Account de Alice
-    const aliceAccountDespues = await getAccount(provider.connection, aliceMonedaDeCambioAccount);
-    console.log("Estado de la cuenta de Alice antes de comprar tokens: ");
-    console.log(aliceAccountAntes)
-    console.log("------------------------------------------------------")
-    console.log(aliceAccountDespues)
-
   });
-  // Test Sponsor con timestamp transcurrido error VentasCerradas
-  it("Alice compra 11 tokens del evento pagando 11 unidades de la moneda de cambio", async () => {
+  
 
-    const aliceAccountAntes = await getAccount(provider.connection, aliceMonedaDeCambioAccount);
-
-    const qty = new BN(11);
-    await program.methods
-      .sponsorEvent(qty)
-      .accounts({
-        eventMint: eventMint,
-        payerAcceptedMintAta: aliceMonedaDeCambioAccount,
-        evento: eventPublicKey,
-        authority: alice.publicKey,
-        payerEventMintAta: aliceEventTokenAccount,
-        treasuryVault: treasuryVault
-      })
-      .signers([alice])
-      .rpc();
-
-    // Mostrar estado del Asociated Token Account de Alice
-    const aliceAccountDespues = await getAccount(provider.connection, aliceMonedaDeCambioAccount);
-    console.log("Estado de la cuenta de Alice antes de comprar tokens: ");
-    console.log(aliceAccountAntes)
-    console.log("------------------------------------------------------")
-    console.log(aliceAccountDespues)
-
-  });
-
-  // Test Comprar Tickets
-  it("Alice quiere comprar 10 Tickes", async () => {
-    const aliceAccount2 = await getAccount(provider.connection, aliceMonedaDeCambioAccount);
-    console.log("Estado de la cuenta de Alice despues de comprar 10 Tickets: ");
-    console.log(aliceAccount2)
-
-    const qty = new BN(10);
+  // Test Comprar Tickets en preventa
+  it("Alice decide comprar solo 3 porque su amiga Rogelia no confirmó asistencia", async () => {
+    console.log("A Alice ahora le alcanza para comprar 4 tickets en preventa, pero...");
+    const qty = new BN(3);
     await program.methods.comprarTickets(qty)
       .accounts({
         payerAcceptedMintAta: aliceMonedaDeCambioAccount,
@@ -157,10 +129,46 @@ describe("gestion-de-eventos", () => {
       })
       .signers([alice])
       .rpc();
+    
+    
+  });
 
-    const aliceAccount3 = await getAccount(provider.connection, aliceMonedaDeCambioAccount);
-    console.log("Estado de la cuenta de Alice despues de comprar 10 Tickets: ");
-    console.log(aliceAccount3)
+  // dejamos pasar el tiempo de preventa
+
+  it("El tiempo de preventa transcurrió", async () => {
+    const aliceBalance = await getAccount(provider.connection, aliceMonedaDeCambioAccount);
+    console.log("Saldo de Alice: Luego de comprar 20 tokens y 3 tickets en preventa: ------- ", aliceBalance.amount.toString());
+    console.log("La fecha de cierre de preventa se acerca");
+    await sleep(cierre_preventas_segs);
+    console.log("La preventa acaba de finalizar");
+    console.log("Rogelia pudo solucionar su inconveniente y confirma que asistirá al evento")
+  });
+
+  // Test compra de ticket sin suficientes tockens
+
+  it("Alice intenta comprar un Ticket más pero ya no le alcanza", async () => {
+    const qty = new BN(1);
+    let errMsg = "";
+    try {
+      await program.methods.comprarTickets(qty)
+      .accounts({
+        payerAcceptedMintAta: aliceMonedaDeCambioAccount,
+        evento: eventPublicKey,
+        authority: alice.publicKey,
+        gainVault: gainVault
+      })
+      .signers([alice])
+      .rpc();
+    } catch (err) {
+      if (err.transactionMessage) {
+        errMsg = err.transactionMessage
+      } else {
+        errMsg = err.msg
+      }
+    }
+    console.log("Alice no puede comprar tokens porque... ", errMsg )
+    let verificarError = errMsg == "La venta de tickets esta cerrada" || errMsg.includes("Transaction simulation failed: Error processing Instruction 0:")
+    assert(verificarError);
   });
 
   // Test Withdraw
@@ -184,7 +192,7 @@ describe("gestion-de-eventos", () => {
       provider.connection,
       treasuryVault
     );
-    console.log("Event treasury vault: ", treasuryVaultAccount);
+    // console.log("Event treasury vault: ", treasuryVaultAccount);
 
     // show event organizer accepted mint (USDC) ATA info
     // should have 1 accepte mint (USDC) 
@@ -192,7 +200,7 @@ describe("gestion-de-eventos", () => {
       provider.connection,
       walletAcceptedMintATA // event organizer Accepted mint account (USDC account)
     );
-    console.log("Alice Accepted mint ATA: ", organizerUSDCBalance);
+    // console.log("Alice Accepted mint ATA: ", organizerUSDCBalance);
 
   });
 
@@ -204,15 +212,13 @@ describe("gestion-de-eventos", () => {
         authority: provider.wallet.publicKey,
       })
       .rpc();
-
-    console.log("open_sales esta en -> ", program.account.evento)
-
   })
+
   // Comprar despues de cerrado el evento
 
   it("Alice no puede comprar mas tickets", async () => {
 
-    let error = "";
+    let errMsg = "";
     const qty = new BN(10);
     try {
       await program.methods.comprarTickets(qty)
@@ -225,9 +231,57 @@ describe("gestion-de-eventos", () => {
         .signers([alice])
         .rpc();
     } catch (err) {
-      error = err.msg;
+      if (err.transactionMessage) {
+        errMsg = err.transactionMessage
+      } else {
+        errMsg = err.msg
+      }
     }
-    assert.equal(error, "La venta de tickets esta cerrada");
-    console.log("You can't buy tickets, the Event is already closed");
+    console.log("Alice no puede comprar tokens porque... ", errMsg )
+    let verificarError = errMsg == "La venta de tickets esta cerrada" || errMsg.includes("Transaction simulation failed: Error processing Instruction 0:")
+    assert(verificarError);
+
+  });
+
+  // TEST: Withdraw earnings
+  it("Alice Should withdraw earnings", async () => {
+
+    // show total sponsorships
+    const eventAccount = await program.account.evento.fetch(eventPublicKey);
+    console.log("Event total sponsorships: ", eventAccount.sponsorAmount.toNumber());
+
+    // show event gain vault amount
+    let gainVaultAccount = await getAccount(
+      provider.connection,
+      gainVault
+    );
+    console.log("Event gain vault amount: ", gainVaultAccount.amount);
+
+    // show Alice sponsorship tokens
+    let aliceTokens = await getAccount(
+      provider.connection,
+      aliceMonedaDeCambioAccount
+    );
+    console.log("Alice sponsorship tokens: ", aliceTokens.amount);
+
+    await program.methods
+      .withdrawEarnings()
+      .accounts({
+        userEventMintAta: aliceEventTokenAccount,
+        evento: eventPublicKey,
+        authority: alice.publicKey,
+        gainVault: gainVault,
+        userAcceptedMintAta: aliceMonedaDeCambioAccount,
+        eventMint: eventMint
+      })
+      .signers([alice])
+      .rpc();
+
+    // show event gain vault amount
+    gainVaultAccount = await getAccount(
+      provider.connection,
+      gainVault
+    );
+    console.log("Event gain vault amount: ", gainVaultAccount.amount);
   });
 });

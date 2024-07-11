@@ -58,10 +58,19 @@ pub fn handle( ctx: Context<ComprarTickets>, quantity: u64 ) -> Result<()> {
         return Err(ErrorCode::SeCierranLasVentas.into()) // deolver un Err con mensaje de ventas cerradas
     };
 
-    /////////////////////////////////////////////////////////////////
+    // Cálculo del monto a debitar de la cuenta de tokens de evento
+    let mut amount = evento.ticket_price.checked_mul(quantity).unwrap();
 
-    // calculate amount to charge (quantity * token_price)
-    let amount = evento.ticket_price.checked_mul(quantity).unwrap();
+    // Verificación de preventa activa. Caso afirmativo reducir a la mitad el amount a debitar
+    if ctx.accounts.clock.unix_timestamp < evento.timestamp_presales_close {
+        let temp_amount = amount / 2;
+        if temp_amount == 0 {
+            amount = 1
+        } else {
+            amount = temp_amount
+        } //
+    };
+    ///////////////////////////////////////////////////////////////////////////////////////////
 
     transfer(
         CpiContext::new(
