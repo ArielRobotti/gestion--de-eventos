@@ -1,6 +1,7 @@
 use {
     crate::collections::Evento,
     crate::utils::errors::ErrorCode,
+    crate::instrucciones::cerrar_evento,
     anchor_lang::prelude::*, 
     anchor_spl::token::*
 };
@@ -48,13 +49,14 @@ pub struct ComprarTickets<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle( ctx: Context<ComprarTickets>, quantity: u64 ) -> Result<()> {
+pub fn handle( ctx: Context<ComprarTickets>, ctx_cerrar_evento: Context<cerrar_evento::CerrarEvento>, quantity: u64 ) -> Result<()> {
 
     ////////// Verificacion de fecha de cierre del evento  //////////
     let evento = &mut ctx.accounts.evento;
     
     if ctx.accounts.clock.unix_timestamp > evento.timestamp_event_close {
-        evento.open_sales = false;
+
+        cerrar_evento::handle(ctx_cerrar_evento);
         return Err(ErrorCode::SeCierranLasVentas.into()) // deolver un Err con mensaje de ventas cerradas
     };
 
