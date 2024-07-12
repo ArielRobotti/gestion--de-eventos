@@ -36,7 +36,7 @@ pub mod gestion_de_eventos {
     pub fn comprar_tickets ( ctx: Context<ComprarTickets>, quantity: u64 ) -> Result<()> {
         let fuera_de_fecha = ctx.accounts.evento.timestamp_event_close < Clock::get()?.unix_timestamp;
         if fuera_de_fecha {    
-            cerrar_evento::handle();
+            let _ = cerrar_evento::handle();
         }
         instrucciones::comprar_tickets::handle(ctx, quantity)
     }
