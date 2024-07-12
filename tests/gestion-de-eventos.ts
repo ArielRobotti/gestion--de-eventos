@@ -128,9 +128,7 @@ describe("gestion-de-eventos", () => {
         gainVault: gainVault
       })
       .signers([alice])
-      .rpc();
-    
-    
+      .rpc(); 
   });
 
   // dejamos pasar el tiempo de preventa
