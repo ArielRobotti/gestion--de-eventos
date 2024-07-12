@@ -28,10 +28,17 @@ pub mod gestion_de_eventos {
     pub fn sponsor_event ( ctx: Context<Sponsor>, quantity: u64 ) -> Result<()> {
         instrucciones::sponsor::handle(ctx, quantity)
     }
+    // Verificar fecha de cierre y cerrar evento si es necesario
+    // fn (timestamp: i64) {
 
+    // }
     // comprar Tickets
-    pub fn comprar_tickets ( ctx: Context<ComprarTickets>, ctx_cerrar_evento: Context<CerrarEvento>, quantity: u64 ) -> Result<()> {
-        instrucciones::comprar_tickets::handle(ctx, ctx_cerrar_evento, quantity)
+    pub fn comprar_tickets ( ctx: Context<ComprarTickets>, quantity: u64 ) -> Result<()> {
+        let fuera_de_fecha = ctx.accounts.evento.timestamp_event_close < Clock::get()?.unix_timestamp;
+        if fuera_de_fecha {    
+            cerrar_evento::handle();
+        }
+        instrucciones::comprar_tickets::handle(ctx, quantity)
     }
     // Withdraw
     pub fn withdraw ( ctx: Context<WithdrawFunds>, quantity: u64 ) -> Result<()> {

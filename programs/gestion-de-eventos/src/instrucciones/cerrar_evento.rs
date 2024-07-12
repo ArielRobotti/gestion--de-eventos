@@ -14,7 +14,7 @@ pub struct CerrarEvento<'info> {
             evento.authority.key().as_ref()
         ],
         bump = evento.event_bump,
-        constraint = evento.authority == authority.key() @ ErrorCode::Unauthorized  
+        // constraint = evento.authority == authority.key() @ ErrorCode::Unauthorized  
     )]
     pub evento: Box<Account<'info, Evento>>,
 
@@ -25,7 +25,13 @@ pub struct CerrarEvento<'info> {
 
 }
 pub fn handle(ctx: Context<CerrarEvento>) -> Result<()> {
-    let  evento = &mut ctx.accounts.evento;
+    let evento = &mut ctx.accounts.evento;
+    let fecha_de_cierra_alcanzada = Clock::get()?.unix_timestamp >= evento.timestamp_event_close;
+
+    // El evento podrá ser cerrado si el firmante es la autoridad del Evento o si la fecha de cierre fue alcanzada
+    if evento.authority != ctx.accounts.authority.key() || !fecha_de_cierra_alcanzada {
+        return Err(ErrorCode::UstedNoPuedeCerrarElEventoAun.into())
+    }
     evento.open_sales = false;
     msg!("El evento se encuentra {}", if evento.open_sales { "abierto" } else { "cerrado" });
     Ok(())    

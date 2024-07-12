@@ -8,6 +8,7 @@ pub enum ErrorCode {
     SeCierranLasVentas,
     #[msg("La venta de tickets esta cerrada")]
     EventoCerrado,
+    UstedNoPuedeCerrarElEventoAun,
 
     MintNoCoincide,
     FondosInsuficientes,
