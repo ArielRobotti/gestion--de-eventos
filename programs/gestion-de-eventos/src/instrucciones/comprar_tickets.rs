@@ -18,7 +18,7 @@ pub struct ComprarTickets<'info> {
         bump = evento.event_bump,
         constraint = evento.open_sales == true @ ErrorCode::EventoCerrado, 
     )] 
-    pub evento: Box<Account<'info, Evento>>, // event account
+    pub evento: Account<'info, Evento>, // event account
 
     // payer accepted mint ATA
     #[account(
@@ -48,7 +48,7 @@ pub struct ComprarTickets<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle( ctx: Context<ComprarTickets>, quantity: u64 ) -> Result<()> {
+pub fn handle<'info>( ctx: Context<ComprarTickets>, quantity: u64 ) -> Result<()> {
 
     ////////// Verificacion de fecha de cierre del evento  //////////
     let evento = &mut ctx.accounts.evento;

@@ -16,7 +16,7 @@ pub struct CerrarEvento<'info> {
         bump = evento.event_bump,
         // constraint = evento.authority == authority.key() @ ErrorCode::Unauthorized  
     )]
-    pub evento: Box<Account<'info, Evento>>,
+    pub evento: Account<'info, Evento>,
 
     //Authoridad del evento
     #[account(mut)]
